@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avant-Garde Studio</title>
+    <!-- Importing some fonts for the Instagram feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&family=Roboto+Mono&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #f2ede4;
+            --black: #1a1a1a;
+            --red: #d32f2f;
+            --yellow: #fbc02d;
+            --blue: #1976d2;
+            --ui-bg: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #d1ccc0;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* Top Toolbar */
+        .toolbar {
+            width: 100%;
+            background: var(--black);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            z-index: 1000;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 5px 12px;
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: inherit;
+            font-size: 11px;
+        }
+
+        button:hover { background: #555; }
+        button.danger { background: #822; }
+        button.danger:hover { background: #a33; }
+
+        /* The Canvas */
+        .canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .canvas {
+            position: relative;
+            width: 80vw;
+            height: 70vh;
+            max-width: 800px;
+            max-height: 600px;
+            background-color: var(--paper);
+            box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Abstract Shapes & Text */
+        .shape, .text-element {
+            position: absolute;
+            cursor: move;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .shape.selected, .text-element.selected {
+            outline: 2px dashed #000;
+            outline-offset: 4px;
+        }
+
+        .shape-square { background: var(--black); }
+        .shape-circle { border-radius: 50%; background: var(--red); mix-blend-mode: multiply; }
+        
+        .shape-triangle {
+            width: 0 !important; height: 0 !important; background: transparent !important;
+            border-left: 50px solid transparent; border-right: 50px solid transparent;
+            border-bottom: 100px solid var(--blue);
+        }
+
+        .shape-line { height: 2px; background: var(--black); width: 150px; }
+
+        .shape-arrow { width: 100px; height: 2px; background: var(--black); }
+        .shape-arrow::after {
+            content: ''; position: absolute; right: -2px; top: 50%; transform: translateY(-50%);
+            width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+            border-left: 10px solid var(--black);
+        }
+
+        /* Fonts */
+        .font-modern { font-family: 'Montserrat', sans-serif; text-transform: uppercase; }
+        .font-classic { font-family: 'Playfair Display', serif; font-style: italic; }
+        .font-neon { font-family: 'Dancing Script', cursive; text-shadow: 0 0 5px rgba(255,255,255,0.8); }
+        .font-typewriter { font-family: 'Roboto Mono', monospace; }
+        .font-strong { font-family: 'Arial Black', sans-serif; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; }
+
+        /* Properties Panel */
+        .properties-panel {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            background: var(--ui-bg);
+            padding: 15px;
+            border: 2px solid var(--black);
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            width: 220px;
+            z-index: 1001;
+        }
+
+        .prop-row { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: bold; }
+        input, select { padding: 4px; font-family: inherit; font-size: 12px; border: 1px solid #ccc; }
+        input[type="range"] { width: 100%; }
+
+        .canvas::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            opacity: 0.3; pointer-events: none; z-index: 99;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="tool-group">
+            <span>ADD:</span>
+            <button onclick="addShape('square')">Square</button>
+            <button onclick="addShape('circle')">Circle</button>
+            <button onclick="addShape('triangle')">Triangle</button>
+            <button onclick="addShape('line')">Line</button>
+            <button onclick="addShape('arrow')">Arrow</button>
+            <button onclick="addText()" style="background: #1976d2;">+ Text</button>
+        </div>
+        <div class="tool-group">
+            <span>CANVAS BG:</span>
+            <input type="color" id="bg-color-picker" value="#f2ede4" oninput="updateCanvasBg(this.value)">
+        </div>
+        <div class="tool-group">
+            <button class="danger" onclick="deleteSelected()">Delete Selected</button>
+        </div>
+    </div>
+
+    <div class="canvas-container" onclick="deselectAll(event)">
+        <div class="canvas" id="art-canvas">
+            <div class="shape shape-square" style="width:100px; height:100px; top:20%; left:20%; transform:rotate(-10deg);"></div>
+            <div class="text-element font-modern" style="top:50%; left:20%; font-size:40px; color:var(--red);">REVOLUTION</div>
+        </div>
+    </div>
+
+    <div class="properties-panel" id="props-panel">
+        <div id="panel-title" style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">EDIT ELEMENT</div>
+        
+        <!-- Shared Properties -->
+        <div class="prop-row" id="row-text-content" style="display:none;">
+            <label>Text Content</label>
+            <input type="text" id="prop-text-input" oninput="updateShapeProp('textContent', this.value)">
+        </div>
+        
+        <div class="prop-row">
+            <label>Color</label>
+            <input type="color" id="shape-color" oninput="updateShapeProp('color', this.value)">
+        </div>
+
+        <div class="prop-row" id="row-font-type" style="display:none;">
+            <label>Font Style</label>
+            <select id="prop-font-family" onchange="updateShapeProp('fontFamily', this.value)">
+                <option value="font-modern">Modern</option>
+                <option value="font-classic">Classic</option>
+                <option value="font-neon">Neon</option>
+                <option value="font-typewriter">Typewriter</option>
+                <option value="font-strong">Strong</option>
+            </select>
+        </div>
+
+        <div class="prop-row">
+            <label id="label-size">Size</label>
+            <input type="range" id="shape-size" min="5" max="600" oninput="updateShapeProp('size', this.value)">
+        </div>
+        <div class="prop-row">
+            <label>Rotation</label>
+            <input type="range" id="shape-rotation" min="0" max="360" oninput="updateShapeProp('rotation', this.value)">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('art-canvas');
+        const propsPanel = document.getElementById('props-panel');
+        let selectedShape = null;
+        let isDragging = false;
+        let dragTarget = null;
+        let startX, startY, initialLeft, initialTop;
+
+        // Initialize listeners
+        document.querySelectorAll('.shape, .text-element').forEach(attachListeners);
+
+        function attachListeners(el) {
+            el.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                selectElement(el);
+                isDragging = true;
+                dragTarget = el;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = el.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                initialLeft = rect.left - canvasRect.left;
+                initialTop = rect.top - canvasRect.top;
+            });
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || !dragTarget) return;
+            dragTarget.style.left = `${initialLeft + (e.clientX - startX)}px`;
+            dragTarget.style.top = `${initialTop + (e.clientY - startY)}px`;
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; dragTarget = null; });
+
+        function selectElement(el) {
+            if (selectedShape) selectedShape.classList.remove('selected');
+            selectedShape = el;
+            selectedShape.classList.add('selected');
+            propsPanel.style.display = 'flex';
+            
+            const isText = el.classList.contains('text-element');
+            document.getElementById('row-text-content').style.display = isText ? 'flex' : 'none';
+            document.getElementById('row-font-type').style.display = isText ? 'flex' : 'none';
+            document.getElementById('label-size').innerText = isText ? 'Font Size' : 'Length / Size';
+            document.getElementById('panel-title').innerText = isText ? 'EDIT TEXT' : 'EDIT SHAPE';
+
+            if (isText) {
+                document.getElementById('prop-text-input').value = el.innerText;
+                document.getElementById('shape-color').value = rgbToHex(window.getComputedStyle(el).color);
+                document.getElementById('shape-size').value = parseInt(window.getComputedStyle(el).fontSize);
+                // Sync font dropdown
+                const fonts = ['font-modern', 'font-classic', 'font-neon', 'font-typewriter', 'font-strong'];
+                const currentFont = fonts.find(f => el.classList.contains(f));
+                document.getElementById('prop-font-family').value = currentFont || 'font-modern';
+            } else {
+                let color = el.classList.contains('shape-triangle') ? 
+                            window.getComputedStyle(el).borderBottomColor : 
+                            window.getComputedStyle(el).backgroundColor;
+                document.getElementById('shape-color').value = rgbToHex(color);
+                document.getElementById('shape-size').value = parseInt(el.style.width) || el.offsetWidth;
+            }
+            document.getElementById('shape-rotation').value = getRotationDegrees(window.getComputedStyle(el).transform);
+        }
+
+        function deselectAll(e) {
+            if (e.target.id === 'art-canvas' || e.target.classList.contains('canvas-container')) {
+                if (selectedShape) selectedShape.classList.remove('selected');
+                selectedShape = null;
+                propsPanel.style.display = 'none';
+            }
+        }
+
+        function addShape(type) {
+            const el = document.createElement('div');
+            el.className = `shape shape-${type}`;
+            el.style.left = '40%'; el.style.top = '40%';
+            if (type === 'triangle') el.style.borderBottomColor = 'var(--blue)';
+            else if (type === 'line' || type === 'arrow') el.style.width = '150px', el.style.backgroundColor = 'var(--black)';
+            else el.style.width = '100px', el.style.height = '100px', el.style.backgroundColor = 'var(--black)';
+            canvas.appendChild(el);
+            attachListeners(el);
+            selectElement(el);
+        }
+
+        function addText() {
+            const el = document.createElement('div');
+            el.className = 'text-element font-modern';
+            el.innerText = 'TEXT';
+            el.style.left = '40%'; el.style.top = '40%';
+            el.style.fontSize = '32px';
+            el.style.color = 'var(--black)';
+            canvas.appendChild(el);
+            attachListeners(el);
+            selectElement(el);
+        }
+
+        function deleteSelected() {
+            if (selectedShape) {
+                selectedShape.remove();
+                selectedShape = null;
+                propsPanel.style.display = 'none';
+            }
+        }
+
+        function updateShapeProp(prop, value) {
+            if (!selectedShape) return;
+            const isText = selectedShape.classList.contains('text-element');
+
+            if (prop === 'color') {
+                if (isText) selectedShape.style.color = value;
+                else if (selectedShape.classList.contains('shape-triangle')) selectedShape.style.borderBottomColor = value;
+                else {
+                    selectedShape.style.backgroundColor = value;
+                    if (selectedShape.classList.contains('shape-arrow')) {
+                        const styleId = 'arrow-style-' + Array.from(canvas.children).indexOf(selectedShape);
+                        let styleTag = document.getElementById(styleId);
+                        if (!styleTag) { styleTag = document.createElement('style'); styleTag.id = styleId; document.head.appendChild(styleTag); }
+                        styleTag.innerHTML = `.selected.shape-arrow::after { border-left-color: ${value} !important; }`;
+                    }
+                }
+            } else if (prop === 'size') {
+                if (isText) selectedShape.style.fontSize = `${value}px`;
+                else if (selectedShape.classList.contains('shape-triangle')) {
+                    selectedShape.style.borderLeftWidth = `${value/2}px`;
+                    selectedShape.style.borderRightWidth = `${value/2}px`;
+                    selectedShape.style.borderBottomWidth = `${value}px`;
+                } else if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
+                    selectedShape.style.width = `${value}px`;
+                } else {
+                    selectedShape.style.width = `${value}px`;
+                    selectedShape.style.height = `${value}px`;
+                }
+            } else if (prop === 'rotation') {
+                selectedShape.style.transform = `rotate(${value}deg)`;
+            } else if (prop === 'textContent') {
+                selectedShape.innerText = value;
+            } else if (prop === 'fontFamily') {
+                const fonts = ['font-modern', 'font-classic', 'font-neon', 'font-typewriter', 'font-strong'];
+                selectedShape.classList.remove(...fonts);
+                selectedShape.classList.add(value);
+            }
+        }
+
+        function updateCanvasBg(value) { canvas.style.backgroundColor = value; }
+        function rgbToHex(rgb) {
+            if (!rgb) return "#000000";
+            const result = rgb.match(/\d+/g);
+            return result ? "#" + result.slice(0,3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('') : "#000000";
+        }
+        function getRotationDegrees(obj) {
+            if (!obj || obj === 'none') return 0;
+            const values = obj.split('(')[1].split(')')[0].split(',');
+            const angle = Math.round(Math.atan2(values[1], values[0]) * (180/Math.PI));
+            return (angle < 0) ? angle + 360 : angle;
+        }
+    </script>
+</body>
+</html>
