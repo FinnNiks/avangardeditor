@@ -221,6 +221,13 @@
             <label id="label-size">Size</label>
             <input type="range" id="shape-size" min="5" max="600" oninput="updateShapeProp('size', this.value)">
         </div>
+
+        <!-- Thickness Property for Lines and Arrows -->
+        <div class="prop-row" id="row-thickness" style="display:none;">
+            <label>Thickness</label>
+            <input type="range" id="shape-thickness" min="1" max="50" value="2" oninput="updateShapeProp('thickness', this.value)">
+        </div>
+
         <div class="prop-row">
             <label>Rotation</label>
             <input type="range" id="shape-rotation" min="0" max="360" oninput="updateShapeProp('rotation', this.value)">
@@ -268,8 +275,12 @@
             propsPanel.style.display = 'flex';
             
             const isText = el.classList.contains('text-element');
+            const isLineOrArrow = el.classList.contains('shape-line') || el.classList.contains('shape-arrow');
+            
             document.getElementById('row-text-content').style.display = isText ? 'flex' : 'none';
             document.getElementById('row-font-type').style.display = isText ? 'flex' : 'none';
+            document.getElementById('row-thickness').style.display = isLineOrArrow ? 'flex' : 'none';
+            
             document.getElementById('label-size').innerText = isText ? 'Font Size' : 'Length / Size';
             document.getElementById('panel-title').innerText = isText ? 'EDIT TEXT' : 'EDIT SHAPE';
 
@@ -286,6 +297,10 @@
                             window.getComputedStyle(el).backgroundColor;
                 document.getElementById('shape-color').value = rgbToHex(color);
                 document.getElementById('shape-size').value = parseInt(el.style.width) || el.offsetWidth;
+                
+                if (isLineOrArrow) {
+                    document.getElementById('shape-thickness').value = parseInt(el.style.height) || 2;
+                }
             }
             document.getElementById('shape-rotation').value = getRotationDegrees(window.getComputedStyle(el).transform);
         }
@@ -305,6 +320,7 @@
             if (type === 'triangle') el.style.borderBottomColor = 'var(--blue)';
             else if (type === 'line' || type === 'arrow') {
                 el.style.width = '150px';
+                el.style.height = '2px';
                 el.style.backgroundColor = 'var(--black)';
                 el.style.color = 'var(--black)'; // Important for arrow tip
             } else {
@@ -348,8 +364,6 @@
                     selectedShape.style.borderBottomColor = value;
                 } else {
                     selectedShape.style.backgroundColor = value;
-                    // Setting .color on the arrow element allows the tip (pseudo-element)
-                    // to inherit the color via currentColor
                     if (selectedShape.classList.contains('shape-arrow')) {
                         selectedShape.style.color = value;
                     }
@@ -365,6 +379,19 @@
                 } else {
                     selectedShape.style.width = `${value}px`;
                     selectedShape.style.height = `${value}px`;
+                }
+            } else if (prop === 'thickness') {
+                if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
+                    selectedShape.style.height = `${value}px`;
+                    // For arrows, we might want to scale the head slightly with thickness
+                    if (selectedShape.classList.contains('shape-arrow')) {
+                        const headSize = Math.max(6, parseInt(value) + 4);
+                        const headOffset = Math.max(10, parseInt(value) + 8);
+                        // We use a custom style injection or just inline style for pseudo-elements if needed,
+                        // but here we rely on the CSS which uses fixed borders.
+                        // For better dynamic scaling, we can adjust CSS variables:
+                        selectedShape.style.setProperty('--arrow-head-size', `${headSize}px`);
+                    }
                 }
             } else if (prop === 'rotation') {
                 selectedShape.style.transform = `rotate(${value}deg)`;
