@@ -228,6 +228,12 @@
             <input type="range" id="shape-thickness" min="1" max="50" value="2" oninput="updateShapeProp('thickness', this.value)">
         </div>
 
+        <!-- Transparency Property -->
+        <div class="prop-row">
+            <label>Transparency</label>
+            <input type="range" id="shape-opacity" min="0" max="100" value="100" oninput="updateShapeProp('opacity', this.value / 100)">
+        </div>
+
         <div class="prop-row">
             <label>Rotation</label>
             <input type="range" id="shape-rotation" min="0" max="360" oninput="updateShapeProp('rotation', this.value)">
@@ -302,6 +308,11 @@
                     document.getElementById('shape-thickness').value = parseInt(el.style.height) || 2;
                 }
             }
+            
+            // Set Opacity Slider
+            const currentOpacity = window.getComputedStyle(el).opacity || 1;
+            document.getElementById('shape-opacity').value = currentOpacity * 100;
+
             document.getElementById('shape-rotation').value = getRotationDegrees(window.getComputedStyle(el).transform);
         }
 
@@ -383,16 +394,13 @@
             } else if (prop === 'thickness') {
                 if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
                     selectedShape.style.height = `${value}px`;
-                    // For arrows, we might want to scale the head slightly with thickness
                     if (selectedShape.classList.contains('shape-arrow')) {
                         const headSize = Math.max(6, parseInt(value) + 4);
-                        const headOffset = Math.max(10, parseInt(value) + 8);
-                        // We use a custom style injection or just inline style for pseudo-elements if needed,
-                        // but here we rely on the CSS which uses fixed borders.
-                        // For better dynamic scaling, we can adjust CSS variables:
                         selectedShape.style.setProperty('--arrow-head-size', `${headSize}px`);
                     }
                 }
+            } else if (prop === 'opacity') {
+                selectedShape.style.opacity = value;
             } else if (prop === 'rotation') {
                 selectedShape.style.transform = `rotate(${value}deg)`;
             } else if (prop === 'textContent') {
