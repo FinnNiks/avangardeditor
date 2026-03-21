@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avant-Garde Studio</title>
-    <!-- Importing some fonts for the Instagram feel -->
+    <title>Avant-Garde Studio | Engine Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&family=Roboto+Mono&family=Montserrat:wght@900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,155 +12,86 @@
             --red: #d32f2f;
             --yellow: #fbc02d;
             --blue: #1976d2;
-            --dim-blue: #5c7080; /* Muted, dimmer blue */
+            --dim-blue: #5c7080;
             --ui-bg: #ffffff;
             --tool-grey: #444;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            align-items: center; min-height: 100vh;
             background-color: #d1ccc0;
             font-family: 'Courier New', Courier, monospace;
-            user-select: none;
-            overflow: hidden;
+            user-select: none; overflow: hidden;
         }
 
-        /* Top Toolbar */
         .toolbar {
-            width: 100%;
-            background: var(--black);
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            z-index: 1000;
+            width: 100%; background: var(--black); padding: 10px;
+            display: flex; justify-content: center; gap: 15px;
+            flex-wrap: wrap; z-index: 1000;
         }
 
-        .tool-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
-            font-size: 12px;
-        }
+        .tool-group { display: flex; align-items: center; gap: 8px; color: white; font-size: 12px; }
 
         button {
-            padding: 5px 12px;
-            background: var(--tool-grey);
-            color: white;
-            border: 1px solid #666;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-family: inherit;
-            font-size: 11px;
-            transition: background 0.2s;
+            padding: 5px 12px; background: var(--tool-grey); color: white;
+            border: 1px solid #666; cursor: pointer; text-transform: uppercase;
+            font-family: inherit; font-size: 11px; transition: background 0.2s;
         }
 
         button:hover { background: #555; }
         button.danger { background: #822; }
-        button.danger:hover { background: #a33; }
-        
         button.info { background: var(--dim-blue); border-color: #4a5a66; }
-        button.info:hover { background: #4a5a66; }
 
-        /* The Canvas */
         .canvas-container {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
+            flex-grow: 1; display: flex; justify-content: center;
+            align-items: center; width: 100%; padding: 20px; box-sizing: border-box;
         }
 
         .canvas {
-            position: relative;
-            width: 80vw;
-            height: 70vh;
-            max-width: 800px;
-            max-height: 600px;
+            position: relative; width: 80vw; height: 70vh;
+            max-width: 800px; max-height: 600px;
             background-color: var(--paper);
             box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden; border: 1px solid rgba(0,0,0,0.1);
         }
 
-        /* Abstract Shapes & Text */
-        .shape, .text-element {
-            position: absolute;
-            cursor: move;
-            box-sizing: border-box;
-            white-space: nowrap;
-        }
+        .element { position: absolute; cursor: move; box-sizing: border-box; white-space: nowrap; will-change: transform, left, top; }
+        .element.selected { outline: 2px dashed #000; outline-offset: 4px; z-index: 10; }
 
-        .shape.selected, .text-element.selected {
-            outline: 2px dashed #000;
-            outline-offset: 4px;
-        }
-
+        /* Shape Styles */
         .shape-square { background: var(--black); }
         .shape-circle { border-radius: 50%; background: var(--red); }
-        
         .shape-triangle {
             width: 0 !important; height: 0 !important; background: transparent !important;
             border-left: 50px solid transparent; border-right: 50px solid transparent;
             border-bottom: 100px solid var(--blue);
         }
-
-        .shape-line { height: 2px; background: var(--black); width: 150px; }
-
-        .shape-arrow { 
-            width: 100px; 
-            height: 2px; 
-            background: var(--black); 
-            color: var(--black); /* Used by tip via currentColor */
-        }
+        .shape-line { height: 2px; background: var(--black); }
+        .shape-arrow { width: 100px; height: 2px; background: var(--black); }
         .shape-arrow::after {
-            content: ''; 
-            position: absolute; 
-            right: -2px; 
-            top: 50%; 
-            transform: translateY(-50%);
-            width: 0; 
-            height: 0; 
-            border-top: 6px solid transparent; 
-            border-bottom: 6px solid transparent;
-            border-left: 10px solid currentColor; /* Inherits from element color */
+            content: ''; position: absolute; right: -2px; top: 50%; transform: translateY(-50%);
+            width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+            border-left: 10px solid currentColor;
         }
 
-        /* Fonts */
+        /* Font Classes */
         .font-modern { font-family: 'Montserrat', sans-serif; text-transform: uppercase; }
         .font-classic { font-family: 'Playfair Display', serif; font-style: italic; }
         .font-neon { font-family: 'Dancing Script', cursive; text-shadow: 0 0 5px rgba(255,255,255,0.8); }
         .font-typewriter { font-family: 'Roboto Mono', monospace; }
         .font-strong { font-family: 'Arial Black', sans-serif; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; }
 
-        /* Properties Panel */
         .properties-panel {
-            position: fixed;
-            right: 20px;
-            top: 80px;
-            background: var(--ui-bg);
-            padding: 15px;
-            border: 2px solid var(--black);
-            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            width: 220px;
-            z-index: 1001;
+            position: fixed; right: 20px; top: 80px;
+            background: var(--ui-bg); padding: 15px;
+            border: 2px solid var(--black); box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+            display: none; flex-direction: column; gap: 10px; width: 220px; z-index: 1001;
         }
 
         .prop-row { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: bold; }
         input, select { padding: 4px; font-family: inherit; font-size: 12px; border: 1px solid #ccc; }
-        input[type="range"] { width: 100%; }
 
         .canvas::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -175,47 +105,42 @@
     <div class="toolbar">
         <div class="tool-group">
             <span>ADD:</span>
-            <button onclick="addShape('square')">Square</button>
-            <button onclick="addShape('circle')">Circle</button>
-            <button onclick="addShape('triangle')">Triangle</button>
-            <button onclick="addShape('line')">Line</button>
-            <button onclick="addShape('arrow')">Arrow</button>
-            <button onclick="addText()">+ Text</button>
+            <button onclick="engine.addElement('square')">Square</button>
+            <button onclick="engine.addElement('circle')">Circle</button>
+            <button onclick="engine.addElement('triangle')">Triangle</button>
+            <button onclick="engine.addElement('line')">Line</button>
+            <button onclick="engine.addElement('arrow')">Arrow</button>
+            <button onclick="engine.addElement('text')">+ Text</button>
         </div>
         <div class="tool-group">
             <span>CANVAS BG:</span>
-            <input type="color" id="bg-color-picker" value="#f2ede4" oninput="updateCanvasBg(this.value)">
+            <input type="color" id="bg-color-picker" value="#f2ede4" oninput="engine.setBg(this.value)">
         </div>
         <div class="tool-group">
-            <button class="danger" onclick="deleteSelected()">Delete Selected</button>
-            <button class="info" onclick="clearCanvas()">Clean Canvas</button>
+            <button class="info" onclick="engine.clear()">Clean Canvas</button>
         </div>
     </div>
 
-    <div class="canvas-container" onclick="deselectAll(event)">
-        <div class="canvas" id="art-canvas">
-            <div class="shape shape-square" style="width:100px; height:100px; top:20%; left:20%; transform:rotate(-10deg);"></div>
-            <div class="text-element font-modern" style="top:50%; left:20%; font-size:40px; color:var(--red);">REVOLUTION</div>
-        </div>
+    <div class="canvas-container" onmousedown="engine.deselectAll(event)">
+        <div class="canvas" id="art-canvas"></div>
     </div>
 
     <div class="properties-panel" id="props-panel">
-        <div id="panel-title" style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">EDIT ELEMENT</div>
+        <div id="panel-title" style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">EDIT</div>
         
-        <!-- Shared Properties -->
-        <div class="prop-row" id="row-text-content" style="display:none;">
-            <label>Text Content</label>
-            <input type="text" id="prop-text-input" oninput="updateShapeProp('textContent', this.value)">
+        <div class="prop-row" id="row-text-content">
+            <label>Content</label>
+            <input type="text" id="prop-text-input" oninput="engine.updateSelected('content', this.value)">
         </div>
         
         <div class="prop-row">
             <label>Color</label>
-            <input type="color" id="shape-color" oninput="updateShapeProp('color', this.value)">
+            <input type="color" id="prop-color" oninput="engine.updateSelected('color', this.value)">
         </div>
 
-        <div class="prop-row" id="row-font-type" style="display:none;">
+        <div class="prop-row" id="row-font-type">
             <label>Font Style</label>
-            <select id="prop-font-family" onchange="updateShapeProp('fontFamily', this.value)">
+            <select id="prop-font-family" onchange="engine.updateSelected('fontFamily', this.value)">
                 <option value="font-modern">Modern</option>
                 <option value="font-classic">Classic</option>
                 <option value="font-neon">Neon</option>
@@ -226,222 +151,256 @@
 
         <div class="prop-row">
             <label id="label-size">Size</label>
-            <input type="range" id="shape-size" min="5" max="600" oninput="updateShapeProp('size', this.value)">
+            <input type="range" id="prop-size" min="5" max="600" oninput="engine.updateSelected('size', this.value)">
         </div>
 
-        <!-- Thickness Property for Lines and Arrows -->
-        <div class="prop-row" id="row-thickness" style="display:none;">
+        <div class="prop-row" id="row-thickness">
             <label>Thickness</label>
-            <input type="range" id="shape-thickness" min="1" max="50" value="2" oninput="updateShapeProp('thickness', this.value)">
+            <input type="range" id="prop-thickness" min="1" max="50" oninput="engine.updateSelected('thickness', this.value)">
         </div>
 
-        <!-- Transparency Property -->
         <div class="prop-row">
             <label>Transparency</label>
-            <input type="range" id="shape-opacity" min="0" max="100" value="100" oninput="updateShapeProp('opacity', this.value / 100)">
+            <input type="range" id="prop-opacity" min="0" max="100" oninput="engine.updateSelected('opacity', this.value / 100)">
         </div>
 
         <div class="prop-row">
             <label>Rotation</label>
-            <input type="range" id="shape-rotation" min="0" max="360" oninput="updateShapeProp('rotation', this.value)">
+            <input type="range" id="prop-rotation" min="0" max="360" oninput="engine.updateSelected('rotation', this.value)">
         </div>
 
         <div class="prop-row" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
-            <button class="danger" onclick="deleteSelected()" style="width: 100%;">Delete Element</button>
+            <button class="danger" onclick="engine.deleteSelected()">Delete Element</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('art-canvas');
-        const propsPanel = document.getElementById('props-panel');
-        let selectedShape = null;
-        let isDragging = false;
-        let dragTarget = null;
-        let startX, startY, initialLeft, initialTop;
+        /**
+         * BASE CLASS: ArtElement
+         * Represents the logic for any item on the canvas.
+         */
+        class ArtElement {
+            constructor(data = {}) {
+                this.id = data.id || crypto.randomUUID();
+                this.type = data.type || 'square';
+                this.x = data.x || 100;
+                this.y = data.y || 100;
+                this.vx = data.vx || 0; // Velocity X (for future physics)
+                this.vy = data.vy || 0; // Velocity Y (for future physics)
+                this.mass = data.mass || 1;
+                this.rotation = data.rotation || 0;
+                this.size = data.size || 100;
+                this.color = data.color || '#1a1a1a';
+                this.opacity = data.opacity !== undefined ? data.opacity : 1;
+                this.thickness = data.thickness || 2;
+                this.domElement = null;
+            }
 
-        // Initialize listeners
-        document.querySelectorAll('.shape, .text-element').forEach(attachListeners);
+            update(dt) {
+                // Future physics logic: this.x += this.vx * dt;
+            }
 
-        function attachListeners(el) {
-            el.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                selectElement(el);
-                isDragging = true;
-                dragTarget = el;
-                startX = e.clientX;
-                startY = e.clientY;
-                const rect = el.getBoundingClientRect();
-                const canvasRect = canvas.getBoundingClientRect();
-                initialLeft = rect.left - canvasRect.left;
-                initialTop = rect.top - canvasRect.top;
-            });
+            // Method for serialization
+            serialize() {
+                const { domElement, ...data } = this;
+                return data;
+            }
         }
 
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging || !dragTarget) return;
-            dragTarget.style.left = `${initialLeft + (e.clientX - startX)}px`;
-            dragTarget.style.top = `${initialTop + (e.clientY - startY)}px`;
-        });
+        class ShapeElement extends ArtElement {}
 
-        window.addEventListener('mouseup', () => { isDragging = false; dragTarget = null; });
+        class TextElement extends ArtElement {
+            constructor(data = {}) {
+                super(data);
+                this.type = 'text';
+                this.content = data.content || 'NEW TEXT';
+                this.fontFamily = data.fontFamily || 'font-modern';
+            }
+        }
 
-        function selectElement(el) {
-            if (selectedShape) selectedShape.classList.remove('selected');
-            selectedShape = el;
-            selectedShape.classList.add('selected');
-            propsPanel.style.display = 'flex';
-            
-            const isText = el.classList.contains('text-element');
-            const isLineOrArrow = el.classList.contains('shape-line') || el.classList.contains('shape-arrow');
-            
-            document.getElementById('row-text-content').style.display = isText ? 'flex' : 'none';
-            document.getElementById('row-font-type').style.display = isText ? 'flex' : 'none';
-            document.getElementById('row-thickness').style.display = isLineOrArrow ? 'flex' : 'none';
-            
-            document.getElementById('label-size').innerText = isText ? 'Font Size' : 'Length / Size';
-            document.getElementById('panel-title').innerText = isText ? 'EDIT TEXT' : 'EDIT SHAPE';
-
-            if (isText) {
-                document.getElementById('prop-text-input').value = el.innerText;
-                document.getElementById('shape-color').value = rgbToHex(window.getComputedStyle(el).color);
-                document.getElementById('shape-size').value = parseInt(window.getComputedStyle(el).fontSize);
-                const fonts = ['font-modern', 'font-classic', 'font-neon', 'font-typewriter', 'font-strong'];
-                const currentFont = fonts.find(f => el.classList.contains(f));
-                document.getElementById('prop-font-family').value = currentFont || 'font-modern';
-            } else {
-                let color = el.classList.contains('shape-triangle') ? 
-                            window.getComputedStyle(el).borderBottomColor : 
-                            window.getComputedStyle(el).backgroundColor;
-                document.getElementById('shape-color').value = rgbToHex(color);
-                document.getElementById('shape-size').value = parseInt(el.style.width) || el.offsetWidth;
+        /**
+         * THE ENGINE (MVC Controller)
+         * Manages the State, the Loop, and the DOM Synchronization.
+         */
+        class ArtEngine {
+            constructor() {
+                this.elements = [];
+                this.selectedId = null;
+                this.canvas = document.getElementById('art-canvas');
+                this.propsPanel = document.getElementById('props-panel');
                 
-                if (isLineOrArrow) {
-                    document.getElementById('shape-thickness').value = parseInt(el.style.height) || 2;
-                }
+                // Dragging state
+                this.isDragging = false;
+                this.dragStart = { x: 0, y: 0, elementX: 0, elementY: 0 };
+
+                this.init();
             }
-            
-            // Set Opacity Slider
-            const computedStyle = window.getComputedStyle(el);
-            const currentOpacity = computedStyle.opacity !== "" ? parseFloat(computedStyle.opacity) : 1;
-            document.getElementById('shape-opacity').value = currentOpacity * 100;
 
-            document.getElementById('shape-rotation').value = getRotationDegrees(window.getComputedStyle(el).transform);
-        }
+            init() {
+                // Start Game Loop
+                requestAnimationFrame((t) => this.tick(t));
 
-        function deselectAll(e) {
-            if (e.target.id === 'art-canvas' || e.target.classList.contains('canvas-container')) {
-                if (selectedShape) selectedShape.classList.remove('selected');
-                selectedShape = null;
-                propsPanel.style.display = 'none';
+                // Global Mouse Events for Dragging
+                window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                window.addEventListener('mouseup', () => { this.isDragging = false; });
+
+                // Initial demo elements
+                this.addElement('square', { x: 50, y: 50, rotation: -10 });
+                this.addElement('text', { x: 150, y: 200, content: 'EVOLUTION', color: '#d32f2f', size: 40 });
             }
-        }
 
-        function addShape(type) {
-            const el = document.createElement('div');
-            el.className = `shape shape-${type}`;
-            el.style.left = '40%'; el.style.top = '40%';
-            if (type === 'triangle') el.style.borderBottomColor = 'var(--blue)';
-            else if (type === 'line' || type === 'arrow') {
-                el.style.width = '150px';
-                el.style.height = '2px';
-                el.style.backgroundColor = 'var(--black)';
-                el.style.color = 'var(--black)'; // Important for arrow tip
-            } else {
-                el.style.width = '100px'; 
-                el.style.height = '100px'; 
-                el.style.backgroundColor = 'var(--black)';
-            }
-            canvas.appendChild(el);
-            attachListeners(el);
-            selectElement(el);
-        }
-
-        function addText() {
-            const el = document.createElement('div');
-            el.className = 'text-element font-modern';
-            el.innerText = 'TEXT';
-            el.style.left = '40%'; el.style.top = '40%';
-            el.style.fontSize = '32px';
-            el.style.color = 'var(--black)';
-            canvas.appendChild(el);
-            attachListeners(el);
-            selectElement(el);
-        }
-
-        function deleteSelected() {
-            if (selectedShape) {
-                selectedShape.remove();
-                selectedShape = null;
-                propsPanel.style.display = 'none';
-            }
-        }
-
-        function clearCanvas() {
-            // Remove all children that have 'shape' or 'text-element' class
-            const elements = canvas.querySelectorAll('.shape, .text-element');
-            elements.forEach(el => el.remove());
-            selectedShape = null;
-            propsPanel.style.display = 'none';
-        }
-
-        function updateShapeProp(prop, value) {
-            if (!selectedShape) return;
-            const isText = selectedShape.classList.contains('text-element');
-
-            if (prop === 'color') {
-                if (isText) {
-                    selectedShape.style.color = value;
-                } else if (selectedShape.classList.contains('shape-triangle')) {
-                    selectedShape.style.borderBottomColor = value;
+            addElement(type, data = {}) {
+                let el;
+                if (type === 'text') {
+                    el = new TextElement(data);
                 } else {
-                    selectedShape.style.backgroundColor = value;
-                    if (selectedShape.classList.contains('shape-arrow')) {
-                        selectedShape.style.color = value;
-                    }
+                    el = new ShapeElement({ ...data, type });
                 }
-            } else if (prop === 'size') {
-                if (isText) selectedShape.style.fontSize = `${value}px`;
-                else if (selectedShape.classList.contains('shape-triangle')) {
-                    selectedShape.style.borderLeftWidth = `${value/2}px`;
-                    selectedShape.style.borderRightWidth = `${value/2}px`;
-                    selectedShape.style.borderBottomWidth = `${value}px`;
-                } else if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
-                    selectedShape.style.width = `${value}px`;
+                this.elements.push(el);
+                this.renderInitial(el);
+                this.selectElement(el.id);
+            }
+
+            // First time creation of DOM node
+            renderInitial(el) {
+                const div = document.createElement('div');
+                div.id = el.id;
+                div.className = el.type === 'text' ? 'element text-element' : `element shape shape-${el.type}`;
+                
+                div.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    this.selectElement(el.id);
+                    this.isDragging = true;
+                    this.dragStart = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        elementX: el.x,
+                        elementY: el.y
+                    };
+                });
+
+                el.domElement = div;
+                this.canvas.appendChild(div);
+            }
+
+            tick(timestamp) {
+                // Update State
+                this.elements.forEach(el => el.update(16/1000));
+
+                // Synchronize View
+                this.elements.forEach(el => this.syncDOM(el));
+
+                requestAnimationFrame((t) => this.tick(t));
+            }
+
+            syncDOM(el) {
+                const dom = el.domElement;
+                if (!dom) return;
+
+                // Position and Rotation
+                dom.style.transform = `translate(${el.x}px, ${el.y}px) rotate(${el.rotation}deg)`;
+                dom.style.opacity = el.opacity;
+                
+                // Class-specific styling
+                if (el.type === 'text') {
+                    dom.innerText = el.content;
+                    dom.style.color = el.color;
+                    dom.style.fontSize = `${el.size}px`;
+                    dom.className = `element text-element ${el.fontFamily} ${this.selectedId === el.id ? 'selected' : ''}`;
+                } else if (el.type === 'triangle') {
+                    dom.style.borderLeftWidth = `${el.size/2}px`;
+                    dom.style.borderRightWidth = `${el.size/2}px`;
+                    dom.style.borderBottomWidth = `${el.size}px`;
+                    dom.style.borderBottomColor = el.color;
+                    dom.className = `element shape shape-triangle ${this.selectedId === el.id ? 'selected' : ''}`;
                 } else {
-                    selectedShape.style.width = `${value}px`;
-                    selectedShape.style.height = `${value}px`;
+                    dom.style.width = `${el.size}px`;
+                    dom.style.height = (el.type === 'line' || el.type === 'arrow') ? `${el.thickness}px` : `${el.size}px`;
+                    dom.style.backgroundColor = el.color;
+                    if (el.type === 'arrow') dom.style.color = el.color;
+                    dom.className = `element shape shape-${el.type} ${this.selectedId === el.id ? 'selected' : ''}`;
                 }
-            } else if (prop === 'thickness') {
-                if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
-                    selectedShape.style.height = `${value}px`;
+            }
+
+            handleMouseMove(e) {
+                if (!this.isDragging || !this.selectedId) return;
+                const el = this.elements.find(i => i.id === this.selectedId);
+                if (el) {
+                    el.x = this.dragStart.elementX + (e.clientX - this.dragStart.x);
+                    el.y = this.dragStart.elementY + (e.clientY - this.dragStart.y);
                 }
-            } else if (prop === 'opacity') {
-                selectedShape.style.opacity = value;
-            } else if (prop === 'rotation') {
-                selectedShape.style.transform = `rotate(${value}deg)`;
-            } else if (prop === 'textContent') {
-                selectedShape.innerText = value;
-            } else if (prop === 'fontFamily') {
-                const fonts = ['font-modern', 'font-classic', 'font-neon', 'font-typewriter', 'font-strong'];
-                selectedShape.classList.remove(...fonts);
-                selectedShape.classList.add(value);
+            }
+
+            selectElement(id) {
+                this.selectedId = id;
+                const el = this.elements.find(i => i.id === id);
+                if (!el) return;
+
+                this.propsPanel.style.display = 'flex';
+                
+                // Update Inputs to match state
+                document.getElementById('row-text-content').style.display = el.type === 'text' ? 'flex' : 'none';
+                document.getElementById('row-font-type').style.display = el.type === 'text' ? 'flex' : 'none';
+                document.getElementById('row-thickness').style.display = (el.type === 'line' || el.type === 'arrow') ? 'flex' : 'none';
+
+                if (el.type === 'text') document.getElementById('prop-text-input').value = el.content;
+                document.getElementById('prop-color').value = el.color;
+                document.getElementById('prop-size').value = el.size;
+                document.getElementById('prop-opacity').value = el.opacity * 100;
+                document.getElementById('prop-rotation').value = el.rotation;
+                if (el.thickness) document.getElementById('prop-thickness').value = el.thickness;
+            }
+
+            updateSelected(prop, value) {
+                const el = this.elements.find(i => i.id === this.selectedId);
+                if (el) el[prop] = value;
+            }
+
+            deleteSelected() {
+                const idx = this.elements.findIndex(i => i.id === this.selectedId);
+                if (idx !== -1) {
+                    this.elements[idx].domElement.remove();
+                    this.elements.splice(idx, 1);
+                    this.deselectAll();
+                }
+            }
+
+            deselectAll(e) {
+                if (!e || e.target.id === 'art-canvas' || e.target.classList.contains('canvas-container')) {
+                    this.selectedId = null;
+                    this.propsPanel.style.display = 'none';
+                }
+            }
+
+            clear() {
+                this.elements.forEach(el => el.domElement.remove());
+                this.elements = [];
+                this.deselectAll();
+            }
+
+            setBg(color) { this.canvas.style.backgroundColor = color; }
+
+            // Serialization methods
+            toJSON() {
+                return JSON.stringify({
+                    bg: this.canvas.style.backgroundColor,
+                    elements: this.elements.map(el => el.serialize())
+                });
+            }
+
+            fromJSON(jsonStr) {
+                this.clear();
+                const data = JSON.parse(jsonStr);
+                this.setBg(data.bg);
+                data.elements.forEach(elData => {
+                    this.addElement(elData.type, elData);
+                });
             }
         }
 
-        function updateCanvasBg(value) { canvas.style.backgroundColor = value; }
-        
-        function rgbToHex(rgb) {
-            if (!rgb) return "#000000";
-            const result = rgb.match(/\d+/g);
-            return result ? "#" + result.slice(0,3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('') : "#000000";
-        }
-        
-        function getRotationDegrees(obj) {
-            if (!obj || obj === 'none') return 0;
-            const values = obj.split('(')[1].split(')')[0].split(',');
-            const angle = Math.round(Math.atan2(values[1], values[0]) * (180/Math.PI));
-            return (angle < 0) ? angle + 360 : angle;
-        }
+        // Initialize Global Engine
+        const engine = new ArtEngine();
+
     </script>
 </body>
 </html>
