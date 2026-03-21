@@ -245,6 +245,10 @@
             <label>Rotation</label>
             <input type="range" id="shape-rotation" min="0" max="360" oninput="updateShapeProp('rotation', this.value)">
         </div>
+
+        <div class="prop-row" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+            <button class="danger" onclick="deleteSelected()" style="width: 100%;">Delete Element</button>
+        </div>
     </div>
 
     <script>
