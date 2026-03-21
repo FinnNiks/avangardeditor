@@ -107,7 +107,7 @@
         }
 
         .shape-square { background: var(--black); }
-        .shape-circle { border-radius: 50%; background: var(--red); mix-blend-mode: multiply; }
+        .shape-circle { border-radius: 50%; background: var(--red); }
         
         .shape-triangle {
             width: 0 !important; height: 0 !important; background: transparent !important;
@@ -321,7 +321,8 @@
             }
             
             // Set Opacity Slider
-            const currentOpacity = window.getComputedStyle(el).opacity || 1;
+            const computedStyle = window.getComputedStyle(el);
+            const currentOpacity = computedStyle.opacity !== "" ? parseFloat(computedStyle.opacity) : 1;
             document.getElementById('shape-opacity').value = currentOpacity * 100;
 
             document.getElementById('shape-rotation').value = getRotationDegrees(window.getComputedStyle(el).transform);
