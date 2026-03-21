@@ -13,7 +13,9 @@
             --red: #d32f2f;
             --yellow: #fbc02d;
             --blue: #1976d2;
+            --dim-blue: #5c7080; /* Muted, dimmer blue */
             --ui-bg: #ffffff;
+            --tool-grey: #444;
         }
 
         body {
@@ -51,18 +53,22 @@
 
         button {
             padding: 5px 12px;
-            background: #444;
+            background: var(--tool-grey);
             color: white;
             border: 1px solid #666;
             cursor: pointer;
             text-transform: uppercase;
             font-family: inherit;
             font-size: 11px;
+            transition: background 0.2s;
         }
 
         button:hover { background: #555; }
         button.danger { background: #822; }
         button.danger:hover { background: #a33; }
+        
+        button.info { background: var(--dim-blue); border-color: #4a5a66; }
+        button.info:hover { background: #4a5a66; }
 
         /* The Canvas */
         .canvas-container {
@@ -174,7 +180,7 @@
             <button onclick="addShape('triangle')">Triangle</button>
             <button onclick="addShape('line')">Line</button>
             <button onclick="addShape('arrow')">Arrow</button>
-            <button onclick="addText()" style="background: #1976d2;">+ Text</button>
+            <button onclick="addText()">+ Text</button>
         </div>
         <div class="tool-group">
             <span>CANVAS BG:</span>
@@ -182,6 +188,7 @@
         </div>
         <div class="tool-group">
             <button class="danger" onclick="deleteSelected()">Delete Selected</button>
+            <button class="info" onclick="clearCanvas()">Clean Canvas</button>
         </div>
     </div>
 
@@ -364,6 +371,14 @@
             }
         }
 
+        function clearCanvas() {
+            // Remove all children that have 'shape' or 'text-element' class
+            const elements = canvas.querySelectorAll('.shape, .text-element');
+            elements.forEach(el => el.remove());
+            selectedShape = null;
+            propsPanel.style.display = 'none';
+        }
+
         function updateShapeProp(prop, value) {
             if (!selectedShape) return;
             const isText = selectedShape.classList.contains('text-element');
@@ -394,10 +409,6 @@
             } else if (prop === 'thickness') {
                 if (selectedShape.classList.contains('shape-line') || selectedShape.classList.contains('shape-arrow')) {
                     selectedShape.style.height = `${value}px`;
-                    if (selectedShape.classList.contains('shape-arrow')) {
-                        const headSize = Math.max(6, parseInt(value) + 4);
-                        selectedShape.style.setProperty('--arrow-head-size', `${headSize}px`);
-                    }
                 }
             } else if (prop === 'opacity') {
                 selectedShape.style.opacity = value;
