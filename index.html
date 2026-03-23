@@ -48,7 +48,6 @@
             align-items: center; width: 100%; padding: 20px; box-sizing: border-box;
         }
 
-        /* Root SVG Canvas */
         #art-canvas {
             width: 80vw; height: 70vh;
             max-width: 800px; max-height: 600px;
@@ -59,7 +58,6 @@
             display: block;
         }
 
-        /* SVG Element Styling */
         .element-group { cursor: move; pointer-events: all; }
         .element-group.selected .selection-overlay {
             stroke: #000;
@@ -69,11 +67,8 @@
             display: block;
         }
         .selection-overlay { display: none; }
-
-        /* Hitboxes - Invisible but clickable */
         .hitbox { fill: transparent; stroke: transparent; cursor: move; }
 
-        /* Typography mapping via classes on SVG text */
         .font-modern { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; }
         .font-classic { font-family: 'Playfair Display', serif; font-style: italic; }
         .font-neon { font-family: 'Dancing Script', cursive; }
@@ -114,14 +109,12 @@
 
     <div class="canvas-container" onmousedown="engine.deselectAll(event)">
         <svg id="art-canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
-            <!-- Pattern Overlay (SVG Filter/Pattern version) -->
             <defs>
                 <pattern id="paper-texture" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
                     <image href="https://www.transparenttextures.com/patterns/paper-fibers.png" x="0" y="0" width="100" height="100" opacity="0.3" />
                 </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#paper-texture)" pointer-events="none" />
-            <!-- Elements Container -->
             <g id="elements-layer"></g>
         </svg>
     </div>
@@ -161,9 +154,8 @@
                 this.color = data.color || '#1a1a1a';
                 this.opacity = data.opacity !== undefined ? parseFloat(data.opacity) : 1;
                 this.thickness = parseFloat(data.thickness) || 2;
-                this.domGroup = null; // SVG <g>
+                this.domGroup = null;
             }
-            update() {}
             serialize() { const { domGroup, ...data } = this; return data; }
         }
 
@@ -180,14 +172,14 @@
             }
 
             init() {
-                requestAnimationFrame((t) => this.tick(t));
+                requestAnimationFrame(() => this.tick());
                 window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 window.addEventListener('mouseup', () => { this.isDragging = false; });
 
-                this.addElement('square', { x: 50, y: 50, rotation: -10, color: '#1a1a1a' });
+                this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
                 this.addElement('circle', { x: 400, y: 100, size: 80, color: '#d32f2f' });
-                this.addElement('arrow', { x: 100, y: 300, size: 250, thickness: 4, color: '#1976d2' });
-                this.addElement('text', { x: 100, y: 450, content: 'SVG WORLD SPACE', color: '#1a1a1a', size: 45 });
+                this.addElement('arrow', { x: 100, y: 300, size: 250, thickness: 4, color: '#1976d2', rotation: -30 });
+                this.addElement('text', { x: 100, y: 450, content: 'CENTERED ROTATION', color: '#1a1a1a', size: 45 });
             }
 
             addElement(type, data = {}) {
@@ -206,12 +198,10 @@
                 g.setAttribute("id", el.id);
                 g.classList.add("element-group");
 
-                // Add Selection Overlay (Dashed box)
                 const overlay = document.createElementNS(SVG_NS, "rect");
                 overlay.classList.add("selection-overlay");
                 g.appendChild(overlay);
 
-                // Create inner content based on type
                 if (el.type === 'square') {
                     const rect = document.createElementNS(SVG_NS, "rect");
                     rect.classList.add("visual-node");
@@ -225,16 +215,12 @@
                     poly.classList.add("visual-node");
                     g.appendChild(poly);
                 } else if (el.type === 'line' || el.type === 'arrow') {
-                    // Hitbox: Thick invisible path for easy grabbing
                     const hitbox = document.createElementNS(SVG_NS, "path");
                     hitbox.classList.add("hitbox");
                     g.appendChild(hitbox);
-
-                    // Visible Path
                     const path = document.createElementNS(SVG_NS, "path");
                     path.classList.add("visual-node", "trunk");
                     g.appendChild(path);
-
                     if (el.type === 'arrow') {
                         const head = document.createElementNS(SVG_NS, "polygon");
                         head.classList.add("visual-node", "head");
@@ -250,7 +236,6 @@
                     e.stopPropagation();
                     this.selectElement(el.id);
                     this.isDragging = true;
-                    // Note: Simplified coordinate delta for SVG drag
                     const pt = this.getSVGPoint(e);
                     this.dragStart = { x: pt.x, y: pt.y, elementX: el.x, elementY: el.y };
                 });
@@ -261,8 +246,7 @@
 
             getSVGPoint(e) {
                 const p = this.canvas.createSVGPoint();
-                p.x = e.clientX;
-                p.y = e.clientY;
+                p.x = e.clientX; p.y = e.clientY;
                 return p.matrixTransform(this.canvas.getScreenCTM().inverse());
             }
 
@@ -275,15 +259,32 @@
                 const g = el.domGroup;
                 if (!g) return;
 
-                // Position & Rotate the whole Group
-                g.setAttribute("transform", `translate(${el.x}, ${el.y}) rotate(${el.rotation})`);
+                const node = g.querySelector(".visual-node");
+                const overlay = g.querySelector(".selection-overlay");
+                
+                // 1. Calculate the rotation center based on the shape type
+                let cx = 0, cy = 0;
+                
+                if (el.type === 'square' || el.type === 'circle' || el.type === 'triangle') {
+                    cx = el.size / 2;
+                    cy = el.size / 2;
+                } else if (el.type === 'line' || el.type === 'arrow') {
+                    const headWidth = el.type === 'arrow' ? el.thickness * 4 : 0;
+                    cx = el.size / 2;
+                    cy = headWidth || el.thickness;
+                } else if (el.type === 'text') {
+                    const bbox = node.getBBox();
+                    cx = bbox.x + bbox.width / 2;
+                    cy = bbox.y + bbox.height / 2;
+                }
+
+                // 2. Apply centered rotation
+                g.setAttribute("transform", `translate(${el.x}, ${el.y}) rotate(${el.rotation}, ${cx}, ${cy})`);
                 g.style.opacity = el.opacity;
                 if (this.selectedId === el.id) g.classList.add("selected");
                 else g.classList.remove("selected");
 
-                const node = g.querySelector(".visual-node");
-                const overlay = g.querySelector(".selection-overlay");
-
+                // 3. Update inner dimensions
                 if (el.type === 'square') {
                     node.setAttribute("width", el.size);
                     node.setAttribute("height", el.size);
@@ -296,10 +297,7 @@
                     node.setAttribute("fill", el.color);
                     this.setOverlay(overlay, 0, 0, el.size, el.size);
                 } else if (el.type === 'triangle') {
-                    const p1 = `${el.size / 2},0`;
-                    const p2 = `${el.size},${el.size}`;
-                    const p3 = `0,${el.size}`;
-                    node.setAttribute("points", `${p1} ${p2} ${p3}`);
+                    node.setAttribute("points", `${el.size/2},0 ${el.size},${el.size} 0,${el.size}`);
                     node.setAttribute("fill", el.color);
                     this.setOverlay(overlay, 0, 0, el.size, el.size);
                 } else if (el.type === 'line' || el.type === 'arrow') {
@@ -307,46 +305,36 @@
                     const headWidth = el.type === 'arrow' ? el.thickness * 4 : 0;
                     const headLength = el.type === 'arrow' ? el.thickness * 5 : 0;
                     const trunkLength = el.size - headLength;
-                    const centerY = headWidth || el.thickness;
+                    const lineY = headWidth || el.thickness;
 
-                    const d = `M 0,${centerY} L ${trunkLength},${centerY}`;
-                    
-                    // Sync Trunk
-                    node.setAttribute("d", d);
+                    node.setAttribute("d", `M 0,${lineY} L ${trunkLength},${lineY}`);
                     node.setAttribute("stroke", el.color);
                     node.setAttribute("stroke-width", el.thickness);
-
-                    // Sync Hitbox (Static thick stroke)
-                    hitbox.setAttribute("d", `M 0,${centerY} L ${el.size},${centerY}`);
+                    hitbox.setAttribute("d", `M 0,${lineY} L ${el.size},${lineY}`);
                     hitbox.setAttribute("stroke-width", Math.max(20, el.thickness));
 
                     if (el.type === 'arrow') {
                         const head = g.querySelector(".head");
-                        const pts = `${trunkLength},${centerY - headWidth} ${el.size},${centerY} ${trunkLength},${centerY + headWidth}`;
-                        head.setAttribute("points", pts);
+                        head.setAttribute("points", `${trunkLength},${lineY - headWidth} ${el.size},${lineY} ${trunkLength},${lineY + headWidth}`);
                         head.setAttribute("fill", el.color);
-                        this.setOverlay(overlay, 0, centerY - headWidth, el.size, headWidth * 2);
+                        this.setOverlay(overlay, 0, lineY - headWidth, el.size, headWidth * 2);
                     } else {
-                        this.setOverlay(overlay, 0, centerY - (el.thickness/2), el.size, el.thickness);
+                        this.setOverlay(overlay, 0, lineY - (el.thickness/2), el.size, el.thickness);
                     }
                 } else if (el.type === 'text') {
                     node.textContent = el.content;
                     node.setAttribute("fill", el.color);
                     node.setAttribute("font-size", el.size);
-                    node.setAttribute("y", el.size); // Adjust for baseline
+                    node.setAttribute("y", el.size);
                     node.setAttribute("class", `visual-node ${el.fontFamily}`);
-                    
-                    // Precise bounding box for text overlay
                     const bbox = node.getBBox();
                     this.setOverlay(overlay, bbox.x, bbox.y, bbox.width, bbox.height);
                 }
             }
 
             setOverlay(ov, x, y, w, h) {
-                ov.setAttribute("x", x - 5);
-                ov.setAttribute("y", y - 5);
-                ov.setAttribute("width", w + 10);
-                ov.setAttribute("height", h + 10);
+                ov.setAttribute("x", x - 5); ov.setAttribute("y", y - 5);
+                ov.setAttribute("width", w + 10); ov.setAttribute("height", h + 10);
             }
 
             handleMouseMove(e) {
@@ -363,12 +351,10 @@
                 this.selectedId = id;
                 const el = this.elements.find(i => i.id === id);
                 if (!el) return;
-
                 this.propsPanel.style.display = 'flex';
                 document.getElementById('row-text-content').style.display = el.type === 'text' ? 'flex' : 'none';
                 document.getElementById('row-font-type').style.display = el.type === 'text' ? 'flex' : 'none';
                 document.getElementById('row-thickness').style.display = (el.type === 'line' || el.type === 'arrow') ? 'flex' : 'none';
-
                 if (el.type === 'text') {
                     document.getElementById('prop-text-input').value = el.content;
                     document.getElementById('prop-font-family').value = el.fontFamily;
