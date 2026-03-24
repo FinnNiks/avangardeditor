@@ -122,17 +122,16 @@
             <button onclick="engine.addElement('text')">+ Text</button>
         </div>
         <div class="tool-group">
-            <span>BG:</span>
+            <span>CANVAS:</span>
             <input type="color" id="bg-color-picker" value="#f2ede4" oninput="engine.setBg(this.value)">
         </div>
         <div class="tool-group">
-            <span>RATIO:</span>
             <select class="ui-select" id="ratio-selector" onchange="engine.setAspectRatio(this.value)">
-                <option value="1.333">4:3 (Classic)</option>
-                <option value="1">1:1 (Square)</option>
-                <option value="1.777">16:9 (HD)</option>
-                <option value="1.5">3:2 (Photo)</option>
-                <option value="0.75">3:4 (Portrait)</option>
+                <option value="1.333">4:3</option>
+                <option value="1">1:1</option>
+                <option value="1.777">16:9</option>
+                <option value="1.5">3:2</option>
+                <option value="0.75">3:4</option>
             </select>
         </div>
         <div class="tool-group">
