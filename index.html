@@ -53,10 +53,9 @@
             position: relative;
             box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
             background-color: var(--paper);
-            transition: width 0.3s ease-out, height 0.3s ease-out; /* Smooth transition for ratio changes */
+            transition: width 0.3s ease-out, height 0.3s ease-out;
         }
         
-        /* Disable transition during active dragging/resizing */
         .canvas-wrapper.no-transition {
             transition: none !important;
         }
@@ -69,7 +68,6 @@
             cursor: crosshair;
         }
 
-        /* Invisible Resize Area */
         .resize-trigger {
             position: absolute;
             right: 0;
@@ -183,8 +181,8 @@
             constructor(data = {}) {
                 this.id = data.id || crypto.randomUUID();
                 this.type = data.type || 'square';
-                this.x = parseFloat(data.x) || 100;
-                this.y = parseFloat(data.y) || 100;
+                this.x = parseFloat(data.x);
+                this.y = parseFloat(data.y);
                 this.rotation = parseFloat(data.rotation) || 0;
                 this.size = parseFloat(data.size) || 100;
                 this.color = data.color || '#1a1a1a';
@@ -205,7 +203,7 @@
                 this.propsPanel = document.getElementById('props-panel');
                 
                 this.bgColor = "#f2ede4";
-                this.currentRatio = 1.333; // Default 4:3
+                this.currentRatio = 1.333; 
                 
                 this.isDragging = false;
                 this.isResizing = false;
@@ -238,15 +236,15 @@
                     };
                 });
 
+                // Spawn initial elements in pleasant positions
                 this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
-                this.addElement('circle', { x: 400, y: 100, size: 80, color: '#d32f2f' });
+                this.addElement('circle', { x: 450, y: 120, size: 80, color: '#d32f2f' });
             }
 
             setAspectRatio(val) {
                 this.currentRatio = parseFloat(val);
                 const currentWidth = this.canvas.clientWidth;
                 const newHeight = currentWidth / this.currentRatio;
-                
                 this.canvas.style.height = `${newHeight}px`;
             }
 
@@ -271,8 +269,20 @@
             }
 
             addElement(type, data = {}) {
+                // If coordinates aren't provided, pick a random spot within the 800x600 viewBox
+                // We leave a 50px buffer so things aren't glued to the edges
+                const randomX = Math.random() * (700 - 50) + 50;
+                const randomY = Math.random() * (500 - 50) + 50;
+
                 const color = data.color || this.getRandomDistinctColor();
-                const el = new ArtElement({ ...data, color, type });
+                const el = new ArtElement({ 
+                    x: randomX, 
+                    y: randomY, 
+                    ...data, 
+                    color, 
+                    type 
+                });
+
                 if (type === 'text') {
                     el.content = data.content || 'NEW TEXT';
                     el.fontFamily = data.fontFamily || 'font-modern';
@@ -333,9 +343,7 @@
                 if (this.isResizing) {
                     const deltaX = e.clientX - this.resizeStart.x;
                     const newWidth = Math.max(200, this.resizeStart.width + deltaX);
-                    // Maintain current selected ratio during drag
                     const newHeight = newWidth / this.currentRatio; 
-                    
                     this.canvas.style.width = `${newWidth}px`;
                     this.canvas.style.height = `${newHeight}px`;
                     return;
