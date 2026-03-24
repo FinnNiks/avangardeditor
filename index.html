@@ -181,8 +181,8 @@
             constructor(data = {}) {
                 this.id = data.id || crypto.randomUUID();
                 this.type = data.type || 'square';
-                this.x = parseFloat(data.x);
-                this.y = parseFloat(data.y);
+                this.x = data.x !== undefined ? parseFloat(data.x) : 0;
+                this.y = data.y !== undefined ? parseFloat(data.y) : 0;
                 this.rotation = parseFloat(data.rotation) || 0;
                 this.size = parseFloat(data.size) || 100;
                 this.color = data.color || '#1a1a1a';
@@ -236,9 +236,25 @@
                     };
                 });
 
-                // Spawn initial elements in pleasant positions
-                this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
-                this.addElement('circle', { x: 450, y: 120, size: 80, color: '#d32f2f' });
+                // --- STARTUP RANDOM PICTURE ---
+                const texts = ["REVOLUTION", "WE ALL SHALL BE", "ELEVATION", "REBEL", "AVANGARD", "ЧАШНИК", "КАНДИНСКИЙ", "КАЗЕМИР"];
+                
+                // 1. Random Triangle
+                this.addElement('triangle', { size: Math.random() * 200 + 50 });
+                // 2. Random Square
+                this.addElement('square', { size: Math.random() * 200 + 50 });
+                // 3. Random Circle
+                this.addElement('circle', { size: Math.random() * 200 + 50 });
+                // 4. Random Arrow
+                this.addElement('arrow', { size: Math.random() * 300 + 100, thickness: Math.random() * 10 + 2 });
+                // 5. Random Text
+                this.addElement('text', { 
+                    content: texts[Math.floor(Math.random() * texts.length)],
+                    size: Math.random() * 60 + 30,
+                    fontFamily: 'font-modern'
+                });
+
+                this.deselectAll(); // Clean selection UI on start
             }
 
             setAspectRatio(val) {
@@ -249,35 +265,21 @@
             }
 
             getRandomDistinctColor() {
-                const getRGB = (hex) => {
-                    let h = hex.replace('#', '');
-                    if (h.length === 3) h = h.split('').map(c => c + c).join('');
-                    return {
-                        r: parseInt(h.substring(0, 2), 16),
-                        g: parseInt(h.substring(2, 4), 16),
-                        b: parseInt(h.substring(4, 6), 16)
-                    };
-                };
-                const bgRGB = getRGB(this.bgColor);
-                let color, colorRGB, distance;
-                do {
-                    color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-                    colorRGB = getRGB(color);
-                    distance = Math.sqrt(Math.pow(colorRGB.r - bgRGB.r, 2) + Math.pow(colorRGB.g - bgRGB.g, 2) + Math.pow(colorRGB.b - bgRGB.b, 2));
-                } while (distance < 100);
-                return color;
+                const colors = ['#d32f2f', '#fbc02d', '#1976d2', '#1a1a1a', '#388e3c', '#7b1fa2', '#e64a19'];
+                return colors[Math.floor(Math.random() * colors.length)];
             }
 
             addElement(type, data = {}) {
-                // If coordinates aren't provided, pick a random spot within the 800x600 viewBox
-                // We leave a 50px buffer so things aren't glued to the edges
-                const randomX = Math.random() * (700 - 50) + 50;
-                const randomY = Math.random() * (500 - 50) + 50;
+                // ViewBox is 800x600. Keep shapes mostly inside.
+                const randomX = data.x !== undefined ? data.x : Math.random() * 600 + 50;
+                const randomY = data.y !== undefined ? data.y : Math.random() * 450 + 50;
+                const randomRot = Math.random() * 360;
 
                 const color = data.color || this.getRandomDistinctColor();
                 const el = new ArtElement({ 
                     x: randomX, 
                     y: randomY, 
+                    rotation: randomRot,
                     ...data, 
                     color, 
                     type 
