@@ -33,13 +33,14 @@
 
         .tool-group { display: flex; align-items: center; gap: 8px; color: white; font-size: 12px; }
 
-        button {
+        button, select.ui-select {
             padding: 5px 12px; background: var(--tool-grey); color: white;
             border: 1px solid #666; cursor: pointer; text-transform: uppercase;
             font-family: inherit; font-size: 11px; transition: background 0.2s;
+            outline: none;
         }
 
-        button:hover { background: #555; }
+        button:hover, select.ui-select:hover { background: #555; }
         button.danger { background: #822; }
 
         .canvas-container {
@@ -52,6 +53,12 @@
             position: relative;
             box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
             background-color: var(--paper);
+            transition: width 0.3s ease-out, height 0.3s ease-out; /* Smooth transition for ratio changes */
+        }
+        
+        /* Disable transition during active dragging/resizing */
+        .canvas-wrapper.no-transition {
+            transition: none !important;
         }
 
         #art-canvas {
@@ -67,8 +74,8 @@
             position: absolute;
             right: 0;
             bottom: 0;
-            width: 15px;
-            height: 15px;
+            width: 20px;
+            height: 20px;
             background: transparent;
             cursor: nwse-resize;
             z-index: 10;
@@ -115,8 +122,18 @@
             <button onclick="engine.addElement('text')">+ Text</button>
         </div>
         <div class="tool-group">
-            <span>CANVAS BG:</span>
+            <span>BG:</span>
             <input type="color" id="bg-color-picker" value="#f2ede4" oninput="engine.setBg(this.value)">
+        </div>
+        <div class="tool-group">
+            <span>RATIO:</span>
+            <select class="ui-select" id="ratio-selector" onchange="engine.setAspectRatio(this.value)">
+                <option value="1.333">4:3 (Classic)</option>
+                <option value="1">1:1 (Square)</option>
+                <option value="1.777">16:9 (HD)</option>
+                <option value="1.5">3:2 (Photo)</option>
+                <option value="0.75">3:4 (Portrait)</option>
+            </select>
         </div>
         <div class="tool-group">
             <button onclick="engine.clear()">Clean</button>
@@ -183,10 +200,13 @@
                 this.elements = [];
                 this.selectedId = null;
                 this.canvas = document.getElementById('art-canvas');
+                this.wrapper = document.getElementById('canvas-wrapper');
                 this.canvasBgRect = document.getElementById('canvas-bg-rect');
                 this.layer = document.getElementById('elements-layer');
                 this.propsPanel = document.getElementById('props-panel');
+                
                 this.bgColor = "#f2ede4";
+                this.currentRatio = 1.333; // Default 4:3
                 
                 this.isDragging = false;
                 this.isResizing = false;
@@ -203,12 +223,14 @@
                 window.addEventListener('mouseup', () => { 
                     this.isDragging = false; 
                     this.isResizing = false; 
+                    this.wrapper.classList.remove('no-transition');
                 });
 
                 const handle = document.getElementById('resize-handle');
                 handle.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
                     this.isResizing = true;
+                    this.wrapper.classList.add('no-transition');
                     this.resizeStart = {
                         x: e.clientX,
                         y: e.clientY,
@@ -219,6 +241,14 @@
 
                 this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
                 this.addElement('circle', { x: 400, y: 100, size: 80, color: '#d32f2f' });
+            }
+
+            setAspectRatio(val) {
+                this.currentRatio = parseFloat(val);
+                const currentWidth = this.canvas.clientWidth;
+                const newHeight = currentWidth / this.currentRatio;
+                
+                this.canvas.style.height = `${newHeight}px`;
             }
 
             getRandomDistinctColor() {
@@ -304,7 +334,9 @@
                 if (this.isResizing) {
                     const deltaX = e.clientX - this.resizeStart.x;
                     const newWidth = Math.max(200, this.resizeStart.width + deltaX);
-                    const newHeight = newWidth * 0.75; 
+                    // Maintain current selected ratio during drag
+                    const newHeight = newWidth / this.currentRatio; 
+                    
                     this.canvas.style.width = `${newWidth}px`;
                     this.canvas.style.height = `${newHeight}px`;
                     return;
@@ -421,7 +453,7 @@
 
             setBg(color) { 
                 this.bgColor = color;
-                document.getElementById('canvas-wrapper').style.backgroundColor = color;
+                this.wrapper.style.backgroundColor = color;
                 this.canvasBgRect.setAttribute('fill', color);
             }
         }
