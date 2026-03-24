@@ -49,8 +49,11 @@
         }
 
         #art-canvas {
-            width: 80vw; height: 70vh;
-            max-width: 800px; max-height: 600px;
+            /* FIX: Ensure the DOM element strictly follows a 4:3 aspect ratio so the texture perfectly maps to the background */
+            width: 100%;
+            height: auto;
+            max-width: min(800px, 80vw, calc(70vh * 4 / 3));
+            aspect-ratio: 4 / 3;
             background-color: var(--paper);
             box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
             border: 1px solid rgba(0,0,0,0.1);
