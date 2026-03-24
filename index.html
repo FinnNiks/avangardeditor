@@ -49,7 +49,6 @@
         }
 
         #art-canvas {
-            /* FIX: Ensure the DOM element strictly follows a 4:3 aspect ratio so the texture perfectly maps to the background */
             width: 100%;
             height: auto;
             max-width: min(800px, 80vw, calc(70vh * 4 / 3));
@@ -117,6 +116,7 @@
                     <image href="https://www.transparenttextures.com/patterns/paper-fibers.png" x="0" y="0" width="100" height="100" opacity="0.3" />
                 </pattern>
             </defs>
+            <rect id="canvas-bg-rect" width="100%" height="100%" fill="var(--paper)" />
             <rect width="100%" height="100%" fill="url(#paper-texture)" pointer-events="none" />
             <g id="elements-layer"></g>
         </svg>
@@ -159,7 +159,6 @@
                 this.thickness = parseFloat(data.thickness) || 2;
                 this.domGroup = null;
             }
-            serialize() { const { domGroup, ...data } = this; return data; }
         }
 
         class ArtEngine {
@@ -167,8 +166,10 @@
                 this.elements = [];
                 this.selectedId = null;
                 this.canvas = document.getElementById('art-canvas');
+                this.canvasBgRect = document.getElementById('canvas-bg-rect');
                 this.layer = document.getElementById('elements-layer');
                 this.propsPanel = document.getElementById('props-panel');
+                this.bgColor = "#f2ede4";
                 this.isDragging = false;
                 this.dragStart = { x: 0, y: 0, elementX: 0, elementY: 0 };
                 this.init();
@@ -179,18 +180,52 @@
                 window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 window.addEventListener('mouseup', () => { this.isDragging = false; });
 
+                // Initial elements with distinct colors
                 this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
                 this.addElement('circle', { x: 400, y: 100, size: 80, color: '#d32f2f' });
                 this.addElement('arrow', { x: 100, y: 300, size: 250, thickness: 4, color: '#1976d2', rotation: -30 });
                 this.addElement('text', { x: 100, y: 450, content: 'CENTERED ROTATION', color: '#1a1a1a', size: 45 });
             }
 
+            // Helper to get a random color that contrasts with the background
+            getRandomDistinctColor() {
+                const getRGB = (hex) => {
+                    let h = hex.replace('#', '');
+                    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+                    return {
+                        r: parseInt(h.substring(0, 2), 16),
+                        g: parseInt(h.substring(2, 4), 16),
+                        b: parseInt(h.substring(4, 6), 16)
+                    };
+                };
+
+                const bgRGB = getRGB(this.bgColor);
+                let color, colorRGB, distance;
+
+                // Loop until we find a color that is at least 100 units away in RGB "distance"
+                do {
+                    color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    colorRGB = getRGB(color);
+                    distance = Math.sqrt(
+                        Math.pow(colorRGB.r - bgRGB.r, 2) +
+                        Math.pow(colorRGB.g - bgRGB.g, 2) +
+                        Math.pow(colorRGB.b - bgRGB.b, 2)
+                    );
+                } while (distance < 100);
+
+                return color;
+            }
+
             addElement(type, data = {}) {
-                const el = new ArtElement({ ...data, type });
+                // Assign a random distinct color if one isn't provided
+                const randomColor = this.getRandomDistinctColor();
+                const el = new ArtElement({ color: randomColor, ...data, type });
+                
                 if (type === 'text') {
                     el.content = data.content || 'NEW TEXT';
                     el.fontFamily = data.fontFamily || 'font-modern';
                 }
+                
                 this.elements.push(el);
                 this.renderInitial(el);
                 this.selectElement(el.id);
@@ -265,7 +300,6 @@
                 const node = g.querySelector(".visual-node");
                 const overlay = g.querySelector(".selection-overlay");
                 
-                // 1. Calculate the rotation center based on the shape type
                 let cx = 0, cy = 0;
                 
                 if (el.type === 'square' || el.type === 'circle' || el.type === 'triangle') {
@@ -281,13 +315,11 @@
                     cy = bbox.y + bbox.height / 2;
                 }
 
-                // 2. Apply centered rotation
                 g.setAttribute("transform", `translate(${el.x}, ${el.y}) rotate(${el.rotation}, ${cx}, ${cy})`);
                 g.style.opacity = el.opacity;
                 if (this.selectedId === el.id) g.classList.add("selected");
                 else g.classList.remove("selected");
 
-                // 3. Update inner dimensions
                 if (el.type === 'square') {
                     node.setAttribute("width", el.size);
                     node.setAttribute("height", el.size);
@@ -384,7 +416,7 @@
             }
 
             deselectAll(e) {
-                if (!e || e.target.id === 'art-canvas' || e.target.tagName === 'svg') {
+                if (!e || e.target.id === 'art-canvas' || e.target.tagName === 'svg' || e.target.id === 'canvas-bg-rect') {
                     this.selectedId = null;
                     this.propsPanel.style.display = 'none';
                 }
@@ -396,7 +428,11 @@
                 this.deselectAll();
             }
 
-            setBg(color) { this.canvas.style.backgroundColor = color; }
+            setBg(color) { 
+                this.bgColor = color;
+                this.canvas.style.backgroundColor = color; 
+                this.canvasBgRect.setAttribute('fill', color);
+            }
         }
 
         const engine = new ArtEngine();
