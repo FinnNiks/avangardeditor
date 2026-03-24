@@ -12,7 +12,6 @@
             --red: #d32f2f;
             --yellow: #fbc02d;
             --blue: #1976d2;
-            --dim-blue: #5c7080;
             --ui-bg: #ffffff;
             --tool-grey: #444;
         }
@@ -45,19 +44,34 @@
 
         .canvas-container {
             flex-grow: 1; display: flex; justify-content: center;
-            align-items: center; width: 100%; padding: 20px; box-sizing: border-box;
+            align-items: center; width: 100%; padding: 40px; box-sizing: border-box;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
+            background-color: var(--paper);
         }
 
         #art-canvas {
-            width: 100%;
-            height: auto;
-            max-width: min(800px, 80vw, calc(70vh * 4 / 3));
-            aspect-ratio: 4 / 3;
-            background-color: var(--paper);
-            box-shadow: 20px 20px 60px rgba(0,0,0,0.2);
+            width: 600px; 
+            height: 450px; 
+            display: block;
             border: 1px solid rgba(0,0,0,0.1);
             cursor: crosshair;
-            display: block;
+        }
+
+        /* Invisible Resize Area */
+        .resize-trigger {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 15px;
+            height: 15px;
+            background: transparent;
+            cursor: nwse-resize;
+            z-index: 10;
         }
 
         .element-group { cursor: move; pointer-events: all; }
@@ -105,25 +119,28 @@
             <input type="color" id="bg-color-picker" value="#f2ede4" oninput="engine.setBg(this.value)">
         </div>
         <div class="tool-group">
-            <button class="info" onclick="engine.clear()">Clean Canvas</button>
+            <button onclick="engine.clear()">Clean</button>
         </div>
     </div>
 
     <div class="canvas-container" onmousedown="engine.deselectAll(event)">
-        <svg id="art-canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
-            <defs>
-                <pattern id="paper-texture" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-                    <image href="https://www.transparenttextures.com/patterns/paper-fibers.png" x="0" y="0" width="100" height="100" opacity="0.3" />
-                </pattern>
-            </defs>
-            <rect id="canvas-bg-rect" width="100%" height="100%" fill="var(--paper)" />
-            <rect width="100%" height="100%" fill="url(#paper-texture)" pointer-events="none" />
-            <g id="elements-layer"></g>
-        </svg>
+        <div class="canvas-wrapper" id="canvas-wrapper">
+            <svg id="art-canvas" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <pattern id="paper-texture" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                        <image href="https://www.transparenttextures.com/patterns/paper-fibers.png" x="0" y="0" width="100" height="100" opacity="0.3" />
+                    </pattern>
+                </defs>
+                <rect id="canvas-bg-rect" width="100%" height="100%" fill="#f2ede4" />
+                <rect width="100%" height="100%" fill="url(#paper-texture)" pointer-events="none" />
+                <g id="elements-layer"></g>
+            </svg>
+            <div class="resize-trigger" id="resize-handle"></div>
+        </div>
     </div>
 
     <div class="properties-panel" id="props-panel">
-        <div id="panel-title" style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">EDIT</div>
+        <div style="font-size: 14px; border-bottom: 1px solid #000; padding-bottom: 5px;">EDIT</div>
         <div class="prop-row" id="row-text-content"><label>Content</label><input type="text" id="prop-text-input" oninput="engine.updateSelected('content', this.value)"></div>
         <div class="prop-row"><label>Color</label><input type="color" id="prop-color" oninput="engine.updateSelected('color', this.value)"></div>
         <div class="prop-row" id="row-font-type">
@@ -136,11 +153,11 @@
                 <option value="font-strong">Strong</option>
             </select>
         </div>
-        <div class="prop-row"><label id="label-size">Size / Length</label><input type="range" id="prop-size" min="5" max="600" oninput="engine.updateSelected('size', this.value)"></div>
+        <div class="prop-row"><label>Size</label><input type="range" id="prop-size" min="5" max="600" oninput="engine.updateSelected('size', this.value)"></div>
         <div class="prop-row" id="row-thickness"><label>Thickness</label><input type="range" id="prop-thickness" min="1" max="50" oninput="engine.updateSelected('thickness', this.value)"></div>
-        <div class="prop-row"><label>Transparency</label><input type="range" id="prop-opacity" min="0" max="100" oninput="engine.updateSelected('opacity', this.value / 100)"></div>
+        <div class="prop-row"><label>Opacity</label><input type="range" id="prop-opacity" min="0" max="100" oninput="engine.updateSelected('opacity', this.value / 100)"></div>
         <div class="prop-row"><label>Rotation</label><input type="range" id="prop-rotation" min="0" max="360" oninput="engine.updateSelected('rotation', this.value)"></div>
-        <div class="prop-row" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;"><button class="danger" onclick="engine.deleteSelected()">Delete Element</button></div>
+        <div class="prop-row" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;"><button class="danger" onclick="engine.deleteSelected()">Delete</button></div>
     </div>
 
     <script>
@@ -170,24 +187,40 @@
                 this.layer = document.getElementById('elements-layer');
                 this.propsPanel = document.getElementById('props-panel');
                 this.bgColor = "#f2ede4";
+                
                 this.isDragging = false;
+                this.isResizing = false;
                 this.dragStart = { x: 0, y: 0, elementX: 0, elementY: 0 };
+                this.resizeStart = { x: 0, y: 0, width: 0, height: 0 };
+
                 this.init();
             }
 
             init() {
                 requestAnimationFrame(() => this.tick());
+                
                 window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-                window.addEventListener('mouseup', () => { this.isDragging = false; });
+                window.addEventListener('mouseup', () => { 
+                    this.isDragging = false; 
+                    this.isResizing = false; 
+                });
 
-                // Initial elements with distinct colors
+                const handle = document.getElementById('resize-handle');
+                handle.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    this.isResizing = true;
+                    this.resizeStart = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        width: this.canvas.clientWidth,
+                        height: this.canvas.clientHeight
+                    };
+                });
+
                 this.addElement('square', { x: 50, y: 50, rotation: 15, color: '#1a1a1a' });
                 this.addElement('circle', { x: 400, y: 100, size: 80, color: '#d32f2f' });
-                this.addElement('arrow', { x: 100, y: 300, size: 250, thickness: 4, color: '#1976d2', rotation: -30 });
-                this.addElement('text', { x: 100, y: 450, content: 'CENTERED ROTATION', color: '#1a1a1a', size: 45 });
             }
 
-            // Helper to get a random color that contrasts with the background
             getRandomDistinctColor() {
                 const getRGB = (hex) => {
                     let h = hex.replace('#', '');
@@ -198,34 +231,23 @@
                         b: parseInt(h.substring(4, 6), 16)
                     };
                 };
-
                 const bgRGB = getRGB(this.bgColor);
                 let color, colorRGB, distance;
-
-                // Loop until we find a color that is at least 100 units away in RGB "distance"
                 do {
                     color = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
                     colorRGB = getRGB(color);
-                    distance = Math.sqrt(
-                        Math.pow(colorRGB.r - bgRGB.r, 2) +
-                        Math.pow(colorRGB.g - bgRGB.g, 2) +
-                        Math.pow(colorRGB.b - bgRGB.b, 2)
-                    );
+                    distance = Math.sqrt(Math.pow(colorRGB.r - bgRGB.r, 2) + Math.pow(colorRGB.g - bgRGB.g, 2) + Math.pow(colorRGB.b - bgRGB.b, 2));
                 } while (distance < 100);
-
                 return color;
             }
 
             addElement(type, data = {}) {
-                // Assign a random distinct color if one isn't provided
-                const randomColor = this.getRandomDistinctColor();
-                const el = new ArtElement({ color: randomColor, ...data, type });
-                
+                const color = data.color || this.getRandomDistinctColor();
+                const el = new ArtElement({ ...data, color, type });
                 if (type === 'text') {
                     el.content = data.content || 'NEW TEXT';
                     el.fontFamily = data.fontFamily || 'font-modern';
                 }
-                
                 this.elements.push(el);
                 this.renderInitial(el);
                 this.selectElement(el.id);
@@ -240,34 +262,24 @@
                 overlay.classList.add("selection-overlay");
                 g.appendChild(overlay);
 
-                if (el.type === 'square') {
-                    const rect = document.createElementNS(SVG_NS, "rect");
-                    rect.classList.add("visual-node");
-                    g.appendChild(rect);
-                } else if (el.type === 'circle') {
-                    const circle = document.createElementNS(SVG_NS, "circle");
-                    circle.classList.add("visual-node");
-                    g.appendChild(circle);
-                } else if (el.type === 'triangle') {
-                    const poly = document.createElementNS(SVG_NS, "polygon");
-                    poly.classList.add("visual-node");
-                    g.appendChild(poly);
-                } else if (el.type === 'line' || el.type === 'arrow') {
+                const node = document.createElementNS(SVG_NS, 
+                    el.type === 'square' ? 'rect' : 
+                    el.type === 'circle' ? 'circle' : 
+                    el.type === 'triangle' ? 'polygon' : 
+                    el.type === 'text' ? 'text' : 'path'
+                );
+                node.classList.add("visual-node");
+                g.appendChild(node);
+
+                if (el.type === 'line' || el.type === 'arrow') {
                     const hitbox = document.createElementNS(SVG_NS, "path");
                     hitbox.classList.add("hitbox");
-                    g.appendChild(hitbox);
-                    const path = document.createElementNS(SVG_NS, "path");
-                    path.classList.add("visual-node", "trunk");
-                    g.appendChild(path);
+                    g.insertBefore(hitbox, node);
                     if (el.type === 'arrow') {
                         const head = document.createElementNS(SVG_NS, "polygon");
                         head.classList.add("visual-node", "head");
                         g.appendChild(head);
                     }
-                } else if (el.type === 'text') {
-                    const text = document.createElementNS(SVG_NS, "text");
-                    text.classList.add("visual-node");
-                    g.appendChild(text);
                 }
 
                 g.addEventListener('mousedown', (e) => {
@@ -288,6 +300,26 @@
                 return p.matrixTransform(this.canvas.getScreenCTM().inverse());
             }
 
+            handleMouseMove(e) {
+                if (this.isResizing) {
+                    const deltaX = e.clientX - this.resizeStart.x;
+                    const newWidth = Math.max(200, this.resizeStart.width + deltaX);
+                    const newHeight = newWidth * 0.75; 
+                    this.canvas.style.width = `${newWidth}px`;
+                    this.canvas.style.height = `${newHeight}px`;
+                    return;
+                }
+
+                if (this.isDragging && this.selectedId) {
+                    const el = this.elements.find(i => i.id === this.selectedId);
+                    if (el) {
+                        const pt = this.getSVGPoint(e);
+                        el.x = this.dragStart.elementX + (pt.x - this.dragStart.x);
+                        el.y = this.dragStart.elementY + (pt.y - this.dragStart.y);
+                    }
+                }
+            }
+
             tick() {
                 this.elements.forEach(el => this.syncDOM(el));
                 requestAnimationFrame(() => this.tick());
@@ -296,90 +328,59 @@
             syncDOM(el) {
                 const g = el.domGroup;
                 if (!g) return;
-
                 const node = g.querySelector(".visual-node");
                 const overlay = g.querySelector(".selection-overlay");
-                
                 let cx = 0, cy = 0;
-                
-                if (el.type === 'square' || el.type === 'circle' || el.type === 'triangle') {
-                    cx = el.size / 2;
-                    cy = el.size / 2;
-                } else if (el.type === 'line' || el.type === 'arrow') {
-                    const headWidth = el.type === 'arrow' ? el.thickness * 4 : 0;
-                    cx = el.size / 2;
-                    cy = headWidth || el.thickness;
+
+                if (['square', 'circle', 'triangle'].includes(el.type)) {
+                    cx = el.size / 2; cy = el.size / 2;
                 } else if (el.type === 'text') {
                     const bbox = node.getBBox();
-                    cx = bbox.x + bbox.width / 2;
-                    cy = bbox.y + bbox.height / 2;
+                    cx = bbox.x + bbox.width / 2; cy = bbox.y + bbox.height / 2;
+                } else {
+                    cx = el.size / 2; cy = el.thickness;
                 }
 
                 g.setAttribute("transform", `translate(${el.x}, ${el.y}) rotate(${el.rotation}, ${cx}, ${cy})`);
                 g.style.opacity = el.opacity;
-                if (this.selectedId === el.id) g.classList.add("selected");
-                else g.classList.remove("selected");
+                g.classList.toggle("selected", this.selectedId === el.id);
 
                 if (el.type === 'square') {
-                    node.setAttribute("width", el.size);
-                    node.setAttribute("height", el.size);
+                    node.setAttribute("width", el.size); node.setAttribute("height", el.size);
                     node.setAttribute("fill", el.color);
                     this.setOverlay(overlay, 0, 0, el.size, el.size);
                 } else if (el.type === 'circle') {
-                    node.setAttribute("cx", el.size / 2);
-                    node.setAttribute("cy", el.size / 2);
-                    node.setAttribute("r", el.size / 2);
-                    node.setAttribute("fill", el.color);
+                    node.setAttribute("cx", el.size/2); node.setAttribute("cy", el.size/2);
+                    node.setAttribute("r", el.size/2); node.setAttribute("fill", el.color);
                     this.setOverlay(overlay, 0, 0, el.size, el.size);
                 } else if (el.type === 'triangle') {
                     node.setAttribute("points", `${el.size/2},0 ${el.size},${el.size} 0,${el.size}`);
                     node.setAttribute("fill", el.color);
                     this.setOverlay(overlay, 0, 0, el.size, el.size);
-                } else if (el.type === 'line' || el.type === 'arrow') {
-                    const hitbox = g.querySelector(".hitbox");
-                    const headWidth = el.type === 'arrow' ? el.thickness * 4 : 0;
-                    const headLength = el.type === 'arrow' ? el.thickness * 5 : 0;
-                    const trunkLength = el.size - headLength;
-                    const lineY = headWidth || el.thickness;
-
-                    node.setAttribute("d", `M 0,${lineY} L ${trunkLength},${lineY}`);
-                    node.setAttribute("stroke", el.color);
-                    node.setAttribute("stroke-width", el.thickness);
-                    hitbox.setAttribute("d", `M 0,${lineY} L ${el.size},${lineY}`);
-                    hitbox.setAttribute("stroke-width", Math.max(20, el.thickness));
-
-                    if (el.type === 'arrow') {
-                        const head = g.querySelector(".head");
-                        head.setAttribute("points", `${trunkLength},${lineY - headWidth} ${el.size},${lineY} ${trunkLength},${lineY + headWidth}`);
-                        head.setAttribute("fill", el.color);
-                        this.setOverlay(overlay, 0, lineY - headWidth, el.size, headWidth * 2);
-                    } else {
-                        this.setOverlay(overlay, 0, lineY - (el.thickness/2), el.size, el.thickness);
-                    }
                 } else if (el.type === 'text') {
-                    node.textContent = el.content;
-                    node.setAttribute("fill", el.color);
-                    node.setAttribute("font-size", el.size);
-                    node.setAttribute("y", el.size);
+                    node.textContent = el.content; node.setAttribute("fill", el.color);
+                    node.setAttribute("font-size", el.size); node.setAttribute("y", el.size);
                     node.setAttribute("class", `visual-node ${el.fontFamily}`);
                     const bbox = node.getBBox();
                     this.setOverlay(overlay, bbox.x, bbox.y, bbox.width, bbox.height);
+                } else {
+                    const hW = el.type === 'arrow' ? el.thickness * 4 : 0;
+                    const lY = hW || el.thickness;
+                    node.setAttribute("d", `M 0,${lY} L ${el.size - (el.type === 'arrow' ? el.thickness * 5 : 0)},${lY}`);
+                    node.setAttribute("stroke", el.color); node.setAttribute("stroke-width", el.thickness);
+                    if (el.type === 'arrow') {
+                        const head = g.querySelector(".head");
+                        const tL = el.size - el.thickness * 5;
+                        head.setAttribute("points", `${tL},${lY-hW} ${el.size},${lY} ${tL},${lY+hW}`);
+                        head.setAttribute("fill", el.color);
+                    }
+                    this.setOverlay(overlay, 0, lY - (hW || el.thickness), el.size, (hW * 2) || el.thickness * 2);
                 }
             }
 
             setOverlay(ov, x, y, w, h) {
                 ov.setAttribute("x", x - 5); ov.setAttribute("y", y - 5);
                 ov.setAttribute("width", w + 10); ov.setAttribute("height", h + 10);
-            }
-
-            handleMouseMove(e) {
-                if (!this.isDragging || !this.selectedId) return;
-                const el = this.elements.find(i => i.id === this.selectedId);
-                if (el) {
-                    const pt = this.getSVGPoint(e);
-                    el.x = this.dragStart.elementX + (pt.x - this.dragStart.x);
-                    el.y = this.dragStart.elementY + (pt.y - this.dragStart.y);
-                }
             }
 
             selectElement(id) {
@@ -389,52 +390,41 @@
                 this.propsPanel.style.display = 'flex';
                 document.getElementById('row-text-content').style.display = el.type === 'text' ? 'flex' : 'none';
                 document.getElementById('row-font-type').style.display = el.type === 'text' ? 'flex' : 'none';
-                document.getElementById('row-thickness').style.display = (el.type === 'line' || el.type === 'arrow') ? 'flex' : 'none';
-                if (el.type === 'text') {
-                    document.getElementById('prop-text-input').value = el.content;
-                    document.getElementById('prop-font-family').value = el.fontFamily;
-                }
+                document.getElementById('row-thickness').style.display = ['line', 'arrow'].includes(el.type) ? 'flex' : 'none';
                 document.getElementById('prop-color').value = el.color;
                 document.getElementById('prop-size').value = el.size;
                 document.getElementById('prop-opacity').value = el.opacity * 100;
                 document.getElementById('prop-rotation').value = el.rotation;
-                if (el.thickness) document.getElementById('prop-thickness').value = el.thickness;
+                if (el.type === 'text') {
+                    document.getElementById('prop-text-input').value = el.content;
+                    document.getElementById('prop-font-family').value = el.fontFamily;
+                }
             }
 
-            updateSelected(prop, value) {
+            updateSelected(prop, val) {
                 const el = this.elements.find(i => i.id === this.selectedId);
-                if (el) el[prop] = isNaN(value) || prop === 'color' || prop === 'content' || prop === 'fontFamily' ? value : parseFloat(value);
+                if (el) el[prop] = isNaN(val) || ['color', 'content', 'fontFamily'].includes(prop) ? val : parseFloat(val);
             }
 
             deleteSelected() {
                 const idx = this.elements.findIndex(i => i.id === this.selectedId);
-                if (idx !== -1) {
-                    this.elements[idx].domGroup.remove();
-                    this.elements.splice(idx, 1);
-                    this.deselectAll();
-                }
+                if (idx !== -1) { this.elements[idx].domGroup.remove(); this.elements.splice(idx, 1); this.deselectAll(); }
             }
 
             deselectAll(e) {
-                if (!e || e.target.id === 'art-canvas' || e.target.tagName === 'svg' || e.target.id === 'canvas-bg-rect') {
-                    this.selectedId = null;
-                    this.propsPanel.style.display = 'none';
+                if (!e || ['art-canvas', 'canvas-bg-rect', 'canvas-wrapper'].includes(e.target.id)) {
+                    this.selectedId = null; this.propsPanel.style.display = 'none';
                 }
             }
 
-            clear() {
-                this.elements.forEach(el => el.domGroup.remove());
-                this.elements = [];
-                this.deselectAll();
-            }
+            clear() { this.elements.forEach(el => el.domGroup.remove()); this.elements = []; this.deselectAll(); }
 
             setBg(color) { 
                 this.bgColor = color;
-                this.canvas.style.backgroundColor = color; 
+                document.getElementById('canvas-wrapper').style.backgroundColor = color;
                 this.canvasBgRect.setAttribute('fill', color);
             }
         }
-
         const engine = new ArtEngine();
     </script>
 </body>
